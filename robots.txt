@@ -1,0 +1,18 @@
+# robots.txt for JK Driving School
+User-agent: *
+Allow: /
+
+# Prevent indexing of draft or private helper files
+Disallow: /_svc_new.html
+Disallow: /*_backup*
+
+# Explicitly allow static assets needed for search engine rendering
+Allow: /*.css$
+Allow: /*.js$
+Allow: /*.jpg$
+Allow: /*.jpeg$
+Allow: /*.png$
+Allow: /*.svg$
+
+# Production Sitemap (Canonical Origin)
+Sitemap: https://drivingschool-cy8v5e42m-dhanusreemv-engs-projects.vercel.app/sitemap.xml

@@ -1,0 +1,1 @@
+/* Theme switcher removed as requested */
