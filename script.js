@@ -306,16 +306,31 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ============================================================
-  // 8. PRE-SELECT SERVICE ON CTA CLICK
+  // 8. PRE-SELECT SERVICE ON CTA CLICK & SELECT STATE
   // ============================================================
   const preselectBtns = document.querySelectorAll('[data-preselect]');
   const serviceSelect = document.getElementById('serviceRequired');
+
+  function updateServiceSelectState() {
+    if (!serviceSelect) return;
+    if (!serviceSelect.value) {
+      serviceSelect.classList.add('placeholder-active');
+    } else {
+      serviceSelect.classList.remove('placeholder-active');
+    }
+  }
+
+  if (serviceSelect) {
+    updateServiceSelectState();
+    serviceSelect.addEventListener('change', updateServiceSelectState);
+  }
 
   preselectBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
       const targetService = btn.getAttribute('data-preselect');
       if (targetService && serviceSelect) {
         serviceSelect.value = targetService;
+        updateServiceSelectState();
         serviceSelect.classList.remove('invalid');
         const parentGroup = serviceSelect.closest('.form-group');
         if (parentGroup) parentGroup.classList.remove('has-error');
@@ -331,117 +346,200 @@ document.addEventListener('DOMContentLoaded', () => {
   const phoneInput = document.getElementById('phoneNumber');
   const messageInput = document.getElementById('userMessage');
   const formFeedback = document.getElementById('formFeedback');
+  const nameError = document.getElementById('nameError');
+  const phoneError = document.getElementById('phoneError');
+  const serviceError = document.getElementById('serviceError');
+
+  // WhatsApp Enquiry Recipient: 919841589252
+  const ENQUIRY_WA_NUMBER = '919841589252';
+
+  function validateFullName(raw) {
+    const trimmed = raw ? raw.trim() : '';
+    if (!trimmed) {
+      return { valid: false, message: 'Please enter your full name.' };
+    }
+    if (trimmed.length < 2) {
+      return { valid: false, message: 'Full name must be at least 2 characters.' };
+    }
+    return { valid: true, message: '', clean: trimmed };
+  }
+
+  function validateIndianMobile(raw) {
+    if (!raw || !raw.trim()) {
+      return { valid: false, message: 'Please enter your phone number.', clean: '' };
+    }
+    // Remove spaces, hyphens, parentheses, plus, and dots
+    let cleaned = raw.trim().replace(/[\s\-\(\)\+\.]/g, '');
+
+    // Handle optional +91 or 91 country prefix for Indian numbers
+    if (cleaned.length === 12 && cleaned.startsWith('91')) {
+      cleaned = cleaned.slice(2);
+    } else if (cleaned.length === 11 && cleaned.startsWith('0')) {
+      cleaned = cleaned.slice(1);
+    }
+
+    if (!/^\d+$/.test(cleaned)) {
+      return { valid: false, message: 'Phone number should only contain digits.', clean: '' };
+    }
+
+    if (cleaned.length !== 10) {
+      return { valid: false, message: 'Please enter a valid 10-digit mobile number.', clean: '' };
+    }
+
+    if (!/^[6-9]\d{9}$/.test(cleaned)) {
+      return { valid: false, message: 'Indian mobile numbers must begin with 6, 7, 8, or 9.', clean: '' };
+    }
+
+    return { valid: true, message: '', clean: cleaned };
+  }
+
+  function validateServiceSelection(val) {
+    if (!val || val === '' || val === 'Select service') {
+      return { valid: false, message: 'Please select a training or service.' };
+    }
+    return { valid: true, message: '', clean: val };
+  }
+
+  function clearFieldError(input, errorEl) {
+    if (!input) return;
+    input.classList.remove('invalid');
+    const group = input.closest('.form-group');
+    if (group) group.classList.remove('has-error');
+  }
+
+  function setFieldError(input, errorEl, message) {
+    if (!input) return;
+    input.classList.add('invalid');
+    const group = input.closest('.form-group');
+    if (group) group.classList.add('has-error');
+    if (errorEl) errorEl.textContent = message;
+  }
 
   if (leadForm) {
-    // Clear validation error on user input / change
-    [nameInput, phoneInput, serviceSelect].forEach((input) => {
-      if (!input) return;
-      const clearError = () => {
-        input.classList.remove('invalid');
-        const group = input.closest('.form-group');
-        if (group) group.classList.remove('has-error');
-      };
-      input.addEventListener('input', clearError);
-      input.addEventListener('change', clearError);
-    });
+    // Clear validation error dynamically on user interaction
+    if (nameInput) {
+      nameInput.addEventListener('input', () => clearFieldError(nameInput, nameError));
+    }
+    if (phoneInput) {
+      phoneInput.addEventListener('input', () => clearFieldError(phoneInput, phoneError));
+    }
+    if (serviceSelect) {
+      serviceSelect.addEventListener('change', () => {
+        clearFieldError(serviceSelect, serviceError);
+        updateServiceSelectState();
+      });
+    }
 
     leadForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      let isValid = true;
 
-      // Validate Name
-      const nameVal = nameInput ? nameInput.value.trim() : '';
-      if (!nameVal || nameVal.length < 2) {
-        if (nameInput) {
-          nameInput.classList.add('invalid');
-          const group = nameInput.closest('.form-group');
-          if (group) group.classList.add('has-error');
-        }
-        isValid = false;
-      } else if (nameInput) {
-        nameInput.classList.remove('invalid');
-        const group = nameInput.closest('.form-group');
-        if (group) group.classList.remove('has-error');
+      const nameRes = validateFullName(nameInput ? nameInput.value : '');
+      const phoneRes = validateIndianMobile(phoneInput ? phoneInput.value : '');
+      const serviceRes = validateServiceSelection(serviceSelect ? serviceSelect.value : '');
+
+      let firstInvalidInput = null;
+
+      if (!nameRes.valid) {
+        setFieldError(nameInput, nameError, nameRes.message);
+        if (!firstInvalidInput) firstInvalidInput = nameInput;
+      } else {
+        clearFieldError(nameInput, nameError);
       }
 
-      // Validate Phone (10 digits approx)
-      const rawPhone = phoneInput ? phoneInput.value.trim() : '';
-      const phoneVal = rawPhone.replace(/\D/g, '');
-      if (phoneVal.length < 10) {
-        if (phoneInput) {
-          phoneInput.classList.add('invalid');
-          const group = phoneInput.closest('.form-group');
-          if (group) group.classList.add('has-error');
-        }
-        isValid = false;
-      } else if (phoneInput) {
-        phoneInput.classList.remove('invalid');
-        const group = phoneInput.closest('.form-group');
-        if (group) group.classList.remove('has-error');
+      if (!phoneRes.valid) {
+        setFieldError(phoneInput, phoneError, phoneRes.message);
+        if (!firstInvalidInput) firstInvalidInput = phoneInput;
+      } else {
+        clearFieldError(phoneInput, phoneError);
       }
 
-      // Validate Service Dropdown
-      const serviceVal = serviceSelect ? serviceSelect.value : '';
-      if (!serviceVal) {
-        if (serviceSelect) {
-          serviceSelect.classList.add('invalid');
-          const group = serviceSelect.closest('.form-group');
-          if (group) group.classList.add('has-error');
-        }
-        isValid = false;
-      } else if (serviceSelect) {
-        serviceSelect.classList.remove('invalid');
-        const group = serviceSelect.closest('.form-group');
-        if (group) group.classList.remove('has-error');
+      if (!serviceRes.valid) {
+        setFieldError(serviceSelect, serviceError, serviceRes.message);
+        if (!firstInvalidInput) firstInvalidInput = serviceSelect;
+      } else {
+        clearFieldError(serviceSelect, serviceError);
       }
 
-      if (!isValid) return;
+      if (firstInvalidInput) {
+        firstInvalidInput.focus();
+        if (formFeedback) {
+          formFeedback.className = 'form-feedback';
+          formFeedback.style.display = 'block';
+          formFeedback.style.background = 'rgba(239, 68, 68, 0.12)';
+          formFeedback.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+          formFeedback.style.color = '#FCA5A5';
+          formFeedback.innerHTML = '<strong>⚠️ Please complete all required fields correctly above.</strong>';
+        }
+        return;
+      }
 
-      // Form is valid — Format pre-filled WhatsApp message & auto-open WhatsApp
-      const userMsg = (messageInput && messageInput.value.trim()) ? messageInput.value.trim() : 'N/A';
+      // Hide any previous error banner
+      if (formFeedback) {
+        formFeedback.style.display = 'none';
+      }
 
+      // Prevent duplicate multiple submissions
       const submitBtn = document.getElementById('submitBtn');
-      const originalText = submitBtn ? submitBtn.innerHTML : '';
+      const originalBtnHTML = submitBtn ? submitBtn.innerHTML : '';
       if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span>OPENING WHATSAPP...</span>';
       }
 
-      const whatsappText = `Hello JK Driving School! 👋\n\nI would like to make an enquiry:\n\n👤 *Name:* ${nameVal}\n📞 *Phone:* ${phoneVal}\n🚘 *Service Needed:* ${serviceVal}\n💬 *Message/Notes:* ${userMsg}\n\nPlease get in touch with me. Thank you!`;
+      // Build WhatsApp message strictly following specified format
+      const customerName = nameRes.clean;
+      const customerPhone = phoneRes.clean;
+      const selectedService = serviceRes.clean;
+      const optionalNote = (messageInput && messageInput.value.trim()) ? messageInput.value.trim() : '';
 
-      const whatsappUrl = `https://wa.me/919841589252?text=${encodeURIComponent(whatsappText)}`;
+      let whatsappText = `Hello JK Driving School,\nI would like to enquire about your driving training services.\nName: ${customerName}\nPhone Number: ${customerPhone}\nTraining / Service Needed: ${selectedService}\n`;
 
-      // Automatically open WhatsApp in a new tab/app
-      window.open(whatsappUrl, '_blank');
+      if (optionalNote) {
+        whatsappText += `Message: ${optionalNote}\n`;
+      }
+
+      whatsappText += `Please contact me with further details.\nThank you.`;
+
+      const whatsappUrl = `https://wa.me/${ENQUIRY_WA_NUMBER}?text=${encodeURIComponent(whatsappText)}`;
+
+      // Open WhatsApp chat in a new tab
+      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
 
       setTimeout(() => {
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.innerHTML = originalText;
+          submitBtn.innerHTML = originalBtnHTML;
         }
 
-        formFeedback.className = 'form-feedback success';
-        formFeedback.innerHTML = `
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <strong style="font-size: 0.98rem; color: #15803D; display: flex; align-items: center; gap: 6px;">
-              <span>✅ Connecting to WhatsApp...</span>
-            </strong>
-            <p style="margin: 0; color: var(--text-body); font-size: 0.85rem;">
-              Thank you, <strong>${escapeHtml(nameVal)}</strong>! Your enquiry details have been pre-filled into WhatsApp.
-            </p>
-            <div style="margin-top: 6px;">
-              <a href="${whatsappUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-whatsapp-solid" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; padding: 10px 18px; font-weight: 700; font-size: 0.85rem; width: 100%; border-radius: var(--radius-sm);">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                  <path d="M12.031 2c-5.514 0-9.997 4.484-9.997 9.998 0 1.764.459 3.488 1.332 5.006l-1.366 4.992 5.111-1.34c1.467.8 3.13 1.222 4.92 1.222 5.514 0 9.998-4.484 9.998-9.998 0-5.514-4.484-9.998-9.998-9.998zm0 18.252c-1.547 0-3.056-.414-4.37-1.198l-.313-.186-3.033.795.809-2.955-.205-.326c-.859-1.365-1.314-2.946-1.314-4.582 0-4.551 3.703-8.254 8.256-8.254 4.551 0 8.254 3.703 8.254 8.254 0 4.552-3.703 8.256-8.254 8.256zm4.526-6.183c-.248-.124-1.467-.724-1.694-.807-.228-.083-.393-.124-.559.124-.165.248-.642.807-.787.973-.145.165-.29.186-.538.062-.248-.124-1.048-.386-1.996-1.232-.738-.658-1.236-1.47-1.381-1.718-.145-.248-.015-.383.109-.506.111-.111.248-.29.372-.435.124-.145.165-.248.248-.414.083-.165.041-.311-.021-.435-.062-.124-.559-1.346-.765-1.843-.201-.486-.406-.42-.559-.427h-.476c-.165 0-.435.062-.663.311-.228.248-.87.85-.87 2.073 0 1.222.89 2.401 1.014 2.567.124.165 1.752 2.675 4.244 3.751.593.256 1.056.409 1.417.524.595.189 1.136.162 1.564.098.477-.071 1.467-.6 1.674-1.18.207-.58.207-1.076.145-1.18-.062-.104-.228-.166-.476-.29z"/>
-                </svg>
-                <span>Click here if WhatsApp did not open automatically &rarr;</span>
-              </a>
+        if (formFeedback) {
+          formFeedback.className = 'form-feedback success';
+          formFeedback.style.display = 'block';
+          formFeedback.style.background = '#F0FDF4';
+          formFeedback.style.border = '1px solid #86EFAC';
+          formFeedback.style.color = '#15803D';
+          formFeedback.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <strong style="font-size: 0.95rem; color: #15803D; display: flex; align-items: center; gap: 6px;">
+                <span>✓ Connecting to WhatsApp (+91 98415 89252)...</span>
+              </strong>
+              <p style="margin: 0; color: #1F2937; font-size: 0.85rem; line-height: 1.45;">
+                Thank you, <strong>${escapeHtml(customerName)}</strong>! Your enquiry details have been prepared for WhatsApp chat.
+              </p>
+              <div style="margin-top: 4px;">
+                <a href="${whatsappUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-whatsapp-solid" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; padding: 9px 16px; font-weight: 700; font-size: 0.85rem; width: 100%; border-radius: var(--radius-sm);">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                    <path d="M12.031 2c-5.514 0-9.997 4.484-9.997 9.998 0 1.764.459 3.488 1.332 5.006l-1.366 4.992 5.111-1.34c1.467.8 3.13 1.222 4.92 1.222 5.514 0 9.998-4.484 9.998-9.998 0-5.514-4.484-9.998-9.998-9.998zm0 18.252c-1.547 0-3.056-.414-4.37-1.198l-.313-.186-3.033.795.809-2.955-.205-.326c-.859-1.365-1.314-2.946-1.314-4.582 0-4.551 3.703-8.254 8.256-8.254 4.551 0 8.254 3.703 8.254 8.254 0 4.552-3.703 8.256-8.254 8.256zm4.526-6.183c-.248-.124-1.467-.724-1.694-.807-.228-.083-.393-.124-.559.124-.165.248-.642.807-.787.973-.145.165-.29.186-.538.062-.248-.124-1.048-.386-1.996-1.232-.738-.658-1.236-1.47-1.381-1.718-.145-.248-.015-.383.109-.506.111-.111.248-.29.372-.435.124-.145.165-.248.248-.414.083-.165.041-.311-.021-.435-.062-.124-.559-1.346-.765-1.843-.201-.486-.406-.42-.559-.427h-.476c-.165 0-.435.062-.663.311-.228.248-.87.85-.87 2.073 0 1.222.89 2.401 1.014 2.567.124.165 1.752 2.675 4.244 3.751.593.256 1.056.409 1.417.524.595.189 1.136.162 1.564.098.477-.071 1.467-.6 1.674-1.18.207-.58.207-1.076.145-1.18-.062-.104-.228-.166-.476-.29z"/>
+                  </svg>
+                  <span>Click here if WhatsApp did not open automatically &rarr;</span>
+                </a>
+              </div>
             </div>
-          </div>
-        `;
+          `;
+        }
 
         leadForm.reset();
-      }, 400);
+        updateServiceSelectState();
+      }, 500);
     });
   }
 

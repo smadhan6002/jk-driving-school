@@ -2637,6 +2637,8 @@ button {
 .contact-section .location-name          { color: #FFFFFF; }
 .contact-section .location-tamil         { color: rgba(255,255,255,0.55); }
 .contact-section .location-address       { color: rgba(255,255,255,0.75); }
+.contact-section .btn-secondary-light    { color: #FFFFFF; border-color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.08); font-weight: 700; }
+.contact-section .btn-secondary-light:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.45); color: #FFFFFF; }
 .contact-section .business-hours-card    { background: var(--contact-card-bg); border-color: rgba(255,255,255,0.1); }
 .contact-section .hours-card-header      { border-color: rgba(255,255,255,0.1); }
 .contact-section .hours-title            { color: #FFFFFF; }
@@ -2647,14 +2649,18 @@ button {
 .contact-section .lead-form-card         { background: var(--contact-card-bg); border-color: rgba(255,255,255,0.1); }
 .contact-section .form-card-title        { color: #FFFFFF; }
 .contact-section .form-card-sub          { color: rgba(255,255,255,0.6); }
-.contact-section .form-label             { color: rgba(255,255,255,0.65); }
+.contact-section .form-label             { color: rgba(255,255,255,0.7); }
 .contact-section .form-input,
-.contact-section .form-select            { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.15); color: #FFFFFF; }
+.contact-section .form-select            { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.18); color: #FFFFFF; font-family: inherit; }
 .contact-section .form-input::placeholder { color: rgba(255,255,255,0.35); }
 .contact-section .form-input:focus,
-.contact-section .form-select:focus      { border-color: var(--contact-kicker); box-shadow: 0 0 0 3px rgba(147,180,247,0.2); }
+.contact-section .form-select:focus      { border-color: var(--contact-kicker); box-shadow: 0 0 0 3px rgba(147,180,247,0.25); }
+.contact-section .form-select.placeholder-active { color: rgba(255,255,255,0.45); }
+.contact-section .form-select option     { background-color: #102444; color: #FFFFFF; padding: 10px 14px; }
+.contact-section .form-select option:disabled { color: rgba(255,255,255,0.45); background-color: #0b1a32; }
+.contact-section .form-error             { color: #F87171; font-weight: 600; font-size: 0.8rem; margin-top: 0.4rem; }
 .contact-section .form-privacy-note      { color: rgba(255,255,255,0.45); }
-.contact-section .select-arrow           { color: rgba(255,255,255,0.45); }
+.contact-section .select-arrow           { color: rgba(255,255,255,0.6); pointer-events: none; }
 
 .contact-header {
   max-width: 720px;
@@ -2679,7 +2685,7 @@ button {
 /* Direct Contact Grid */
 .direct-contact-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1.25rem;
   margin-bottom: 3.5rem;
 }
@@ -2964,13 +2970,33 @@ button {
 
 .select-wrapper {
   position: relative;
+  width: 100%;
 }
 
 .form-select {
+  width: 100%;
   appearance: none;
   -webkit-appearance: none;
-  padding-right: 2.5rem;
+  -moz-appearance: none;
+  padding: 0.85rem 2.5rem 0.85rem 1rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  height: auto;
+  min-height: 48px;
   cursor: pointer;
+  box-sizing: border-box;
+}
+
+.form-select option {
+  background-color: #102444;
+  color: #FFFFFF;
+  padding: 10px 14px;
+}
+
+.form-select option:disabled {
+  color: rgba(255, 255, 255, 0.45);
+  background-color: #0b1a32;
 }
 
 .select-arrow {
@@ -3492,6 +3518,13 @@ h2.google-label {
   .direct-contact-grid {
     grid-template-columns: 1fr;
   }
+
+@media (max-width: 1100px) and (min-width: 769px) {
+  .direct-contact-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
 
   .about-pillars-grid {
     grid-template-columns: 1fr;
